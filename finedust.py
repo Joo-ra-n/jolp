@@ -1,7 +1,11 @@
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from urllib import parse
-import sqlite3
+import pymysql
+import requests
+import base64
+import logging
+import sys
 
 place = parse.quote('신암동')
 
@@ -29,30 +33,36 @@ print('미세먼지 농도: ' + g + '㎍/㎥ ( ' + s + ' )')
 print('초미세먼지 농도: ' + i + '㎍/㎥ ( ' + s + ' )')
 print('( 좋음: 1 ),( 보통: 2 ),( 나쁨: 3 ),( 매우나쁨: 4)')
 
-def dbcon():
-    return sqlite3.connect('mydb.db')
+# RDS info
+host = 'rds-mariadb-jolp.c4c7vriv1s2u.ap-northeast-2.rds.amazonaws.com'
+port = 3306
+username = 'rds-mariadb-jolp'
+database = 'finedust'
+password = ''
 
-def create_table():
+# Client Credentials Flow
+def main():
+    # get headers
+    headers = get_headers(client_id, client_secret)
+
+    #call RDS
+    conn, cursor = connect_RDS(host, port, username, password, database)
+
+if __name__ == '__main__':
+    main()
+
+def connect_RDS(host, port, username, password, database):
     try:
-        db = dbcon()
-        c = db.cursor()
-        execute1 = 'CREATE TABLE finedust (place varchar(30), time varchar(50), '
-        execute2 = 'PM10 varchar(5), PM25 varchar(5), gradePM10 varchar(1), gradePM25 varchar(1))'
-        c.execute(execute1 + execute2)
-        db.commit()
-    except Exception as e:
-        print('db error:', e)
-    finally: db.close()
+        conn = pymysql.connect(host, user=username, passwd=password, db=database,
+                               port=port, use_unicode=True, charset='utf8')
+        cursor = conn.cursor()
+    except:
+        logging.error("RDS에 연결되지 않았습니다.")
+        sys.exit(1)
 
-def insert_data():
-    try:
-        db = dbcon()
-        c = db.cursor()
-        setdata = (parse.unquote(place), a, g, i, s, t)
-        c.execute("INSERT INTO finedust VALUES (?, ?, ?, ?, ?, ?)", setdata)
-        db.commit()
-    except Exception as e:
-        print('db error:', e)
-    finally: db.close()
+    return conn, cursor
 
-
+query = '''
+insert into artists (id, name, followerasdfasdfasf
+values
+'''
